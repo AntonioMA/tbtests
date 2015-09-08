@@ -1,0 +1,21 @@
+{
+  "name": "TBTestServer",
+  "version": "0.0.1",
+  "description": "TB Test pico server",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AntonioMA/tbtests.git"
+  },
+  "author": "Antonio M. Amaya",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AntonioMA/tbtests/issues"
+  },
+  "homepage": "https://github.com/AntonioMA/tbtests/",
+  "devDependencies": {
+    "promise": "~7.0.0",
+    "simpleHttpServer": "git://github.com/AntonioMA/simpleHTTPServer",
+    "ioredis": "~1.7.0"
+  }
+}

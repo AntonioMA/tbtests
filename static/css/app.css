@@ -1,0 +1,90 @@
+.buddy-name,
+.invite-message {
+  line-height: 2.3;
+}
+
+.video-holder {
+  position: relative;
+  min-height: 40em;
+  text-align: center;
+  background-color: #333;
+}
+
+.video-holder.empty {
+  background-color: transparent;
+}
+
+.subscriber,
+.publisher {
+  position: absolute;
+}
+
+.subscriber {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40em;
+  z-index: 100;
+}
+
+.publisher {
+  bottom: 1em;
+  right: 1em;
+  width: 20%;
+  height: 10em;
+  z-index: 200;
+  border: 3px solid white;
+  border-radius: 3px;
+}
+
+.video-holder .bottom-bar {
+  position: absolute;
+  bottom: 1em;
+  text-align: center;
+  z-index: 300;
+  left: 0;
+  right: 0;
+}
+
+.waiting,
+.ending {
+  color: #ccc;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  margin: auto;
+  height: 5em;
+  font-size: 1.3em;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: auto;
+  background-color: #ccc;
+
+  border-radius: 100%;
+  -webkit-animation: scaleout 1.0s infinite ease-in-out;
+  animation: scaleout 1.0s infinite ease-in-out;
+}
+
+@-webkit-keyframes scaleout {
+  0% { -webkit-transform: scale(0.0) }
+  100% {
+    -webkit-transform: scale(1.0);
+    opacity: 0;
+  }
+}
+
+@keyframes scaleout {
+  0% {
+    transform: scale(0.0);
+    -webkit-transform: scale(0.0);
+  } 100% {
+    transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+    opacity: 0;
+  }
+}
