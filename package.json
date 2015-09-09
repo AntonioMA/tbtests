@@ -16,6 +16,7 @@
   "devDependencies": {
     "promise": "~7.0.0",
     "simpleHttpServer": "git://github.com/AntonioMA/simpleHTTPServer",
-    "ioredis": "~1.7.0"
+    "ioredis": "~1.7.0",
+    "opentok": "~v2.3.0"
   }
 }

@@ -8,10 +8,11 @@ var LIBS_PATH= './libs';
 
 // What we offer:
 //   * GET /about that just says hey, mom, it's me
+//   * GET /presence Returns the configuration data
 //   * GET /anything/else Tries to find static/anything/else and serves
 //         that file, or a 404 if the file does not exist
-//   * POST /cspReport  Stores whatever is received as a CSP report and returns
-//          a 200
+//   * POST /users
+//   * POST /chats
 //   * OPTIONS /anything logs the request and returns a 500
 //   By default, we're not CORS friendly, not now at least
 //   Anything else, returns a 404
@@ -24,12 +25,16 @@ var CommonMethods = httpServer.CommonMethods;
 var SERVER_PATHS = {
   'GET': {
     '^/about(.html)?(/.*)?$': ServerMethods.getAboutPage,
-    '^/presence?(/.*)?$': ServerMethods.getPresence,
+    '^/presence$': ServerMethods.getPresence,
+// If we wanted to allow /presence/something then...
+//    '^/presence(/.*)?$': ServerMethods.getPresence,
+    '^/chats$': ServerMethods.getChats,
     '.*': CommonMethods.serveStaticContent.
       bind(undefined, {STATIC_PREFIX: './static'})
   },
   'POST': {
-    '^/cspReport$': ServerMethods.storeCSPReport,
+    '^/users$': ServerMethods.postUsers,
+    '^/chats$': ServerMethods.postChats,
     '.*': CommonMethods.goAway.bind(undefined, 403)
   },
   'OPTIONS': {

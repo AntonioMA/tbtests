@@ -7,6 +7,7 @@
 // Prevent leaking into global scope
 !(function(exports, undefined) {
 
+  var _doShow;
   exports.ConnectModalView = Backbone.View.extend({
 
     events: {
@@ -15,6 +16,8 @@
       'submit #connect-form': 'connect',
       'click #connect-btn': 'connect'
     },
+
+    _showDone: new Promise(resolve => _doShow = resolve),
 
     initialize: function(options) {
       if (!options.dispatcher) {
@@ -71,6 +74,7 @@
       // DOM queries
       this.$form = this.$('#connect-form');
       this.$connectButton = this.$('#connect-btn');
+      _doShow();
 
       // Delegate to bootstrap plugin
       this.$el.modal('show');
@@ -113,13 +117,12 @@
 
     presenceSessionReady: function(presenceSession) {
       this.presenceSession = presenceSession;
-
-      // Now that a presence session exists, enable the form
-      // NOTE: show() must be called before this method
-      this.$connectButton.prop('disabled', false);
-      this.$connectButton.text('Connect');
+      this._showDone.then( () => {
+        // Now that a presence session exists, enable the form
+        this.$connectButton.prop('disabled', false);
+        this.$connectButton.text('Connect');
+      });
     }
-
   });
 
 }(window));
