@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html manifest="manifest.appcache">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="pragma" content="no-cache">
+    <title>TokesApp</title>
+
+    <!-- Stable Building blocks -->
+    <link rel="stylesheet" type="text/css" href="shared/style/headers.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/edit_mode.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/input_areas.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/switches.css">
+    <link rel="stylesheet" type="text/css" href="shared/style/confirm.css">
+    <link rel="stylesheet" type="text/css" href="shared/style_unstable/progress_activity.css">
+    <link rel="stylesheet" type="text/css" href="shared/style_unstable/lists.css">
+    <link rel="stylesheet" type="text/css" href="shared/style_unstable/tabs.css">
+    <!-- App styles -->
+    <link rel="stylesheet" type="text/css" href="style/sms.css">
+    <link rel="stylesheet" type="text/css" href="style/root.css">
+
+    <script type="text/javascript" src="js/utils.js"></script>
+    <script type="text/javascript" src="js/tokesServer.js"></script>
+    <script type="text/javascript" src="js/tbuser_db.js"></script>
+    <script type="text/javascript" src="js/tokesApp.js"></script>
+    <script type="text/javascript" src="js/othelper.js"></script>
+  </head>
+  <body role="application">
+    <article id="self-nick-wrapper">
+      <section class="panel" role="region">
+        <header>
+          <h1 id="self-nick-header">Tokes App - Self-Nick</h1>
+        </header>
+        <form id="login-form">
+          <label for="self-nick">Type your Nick:</label>
+          <input id="self-nick" name="self-nick" type="text" value=""/>
+          <label for="server">Type the Friend Server URL:</label>
+          <input id="server" name="server" type="text" value=""/>
+        </form>
+        <button id="login-button">
+          <span class="icon icon-close">Login</span>
+        </button>
+      </section>
+    </article>
+
+    <article id="main-window">
+      <section id="friend-list" class="panel" role="region">
+        <header class="view-header regular-header">
+          <h1 id="header-text" data-l10n-id="messages" aria-hidden="true">TokesApp</h1>
+          <form id="messages-tel-form">
+            <input id="receiver-input" type="text" name="tel" class="tel" />
+            <span id="clear-search" role="button" class="icon icon-clear"></span>
+          </form>
+        </header>
+        <article id="friends-container" class="view-body" data-type="list">
+        </article>
+        <form role="search" id="add-friend-form" class="bottom new-sms-form">
+          <button id="add-friend-button" disabled type="submit">Add Friend</button>
+          <p>
+            <input type="text" id="friend-to-add" name="friend-to-add" placeholder="Friend Nick"/>
+          </p>
+        </form>
+      </section>
+    </article>
+  </body>
+</html>

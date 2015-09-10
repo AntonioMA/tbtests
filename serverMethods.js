@@ -106,7 +106,7 @@ function ServerMethods() {
       return Promise.resolve({
         token: opentok.generateToken(
           tbConfig.presenceSessionId, {
-            data: JSON.stringify({name: data.name}),
+            data: JSON.stringify({name: data && data.name || "Unknown"}),
             role: 'subscriber'
           })
       });
