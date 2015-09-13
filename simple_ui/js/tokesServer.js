@@ -38,8 +38,20 @@ var TokesServer = (function() {
 
   }
 
-  function sendContactSession(aSelfNick, aNick, aSessionId) {
-    throw 'NOT_IMPLEMENTED_YET';
+  // POST to /chats with
+  // Request: (JSON encoded)
+  // *  `invitee`: the name of the other user who is being invited to the chat
+  //
+  // Response: (JSON encoded)
+  // *  `apiKey`: an OpenTok API key that owns the session ID
+  // *  `sessionId`: an OpenTok session ID to conduct the chat within
+  // *  `token`: a token that the creator of the chat (or inviter) can use to
+  //             connect to the chat session
+  function getChatSession(aSelfNick, aNick, aSessionId) {
+    var dataToSend = {
+      invitee: aNick
+    };
+    return Utils.sendXHR('POST', '/chats', , 'application/json');
   }
 
   function eraseEndpoint(aSelfNick, aNick, aEndpoint, aSuccessCallback, aFailureCallback) {
@@ -59,7 +71,7 @@ var TokesServer = (function() {
   return {
     getPresenceSession: getPresenceSession,
     getPresenceToken: getPresenceToken,
-    sendContactSesssion: sendContactSession,
+    getChatSession: getChatSession,
     get friendServer() {
       return server;
     },

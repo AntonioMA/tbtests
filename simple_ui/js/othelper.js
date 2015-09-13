@@ -9,8 +9,9 @@ var OTHelper = (function() {
   // This will store the presence Session object
   var presenceSession = null;
 
-  function getNewSession() {
-    debug('getNewSession');
+  // We need to get the session from the 
+  function getNewSessionId() {
+    debug('getNewSessionId');
     return new Promise((resolve, reject) => {
       throw 'NOT_IMPLEMENTED_YET';
     });
@@ -65,7 +66,7 @@ var OTHelper = (function() {
   return {
     connectToPresenceSession: connectToPresenceSession,
     sendCallTo: sendCallTo,
-    getNewSession: getNewSession,
+    getNewSessionId: getNewSessionId,
     setPresenceHandlers: setPresenceHandlers,
     deleteSession: deleteSession  };
 })();

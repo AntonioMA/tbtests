@@ -272,7 +272,7 @@ var TokesApp = (function() {
       // Should probably inform the user... naaaah
       debug('Nasty user! Trying to add an existing friend ' + aNick + ' no cookie!');
     } else {
-        OTHelper.getNewSessionId(true, addFriendEP.bind(undefined, aNick));
+      OTHelper.getNewSessionId(true, addFriendSessionId.bind(undefined, aNick));
     }
   }
 

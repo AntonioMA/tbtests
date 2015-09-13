@@ -4,6 +4,7 @@
 
 // Take a guess :P
 var DEFAULT_SERVER_PORT = 8123;
+var DEFAULT_STATIC_PATH = './original_ui';
 var LIBS_PATH= './libs';
 
 // What we offer:
@@ -30,7 +31,7 @@ var SERVER_PATHS = {
 //    '^/presence(/.*)?$': ServerMethods.getPresence,
     '^/chats$': ServerMethods.getChats,
     '.*': CommonMethods.serveStaticContent.
-      bind(undefined, {STATIC_PREFIX: './static'})
+      bind(undefined, {STATIC_PREFIX: process.argv[3] || DEFAULT_STATIC_PATH})
   },
   'POST': {
     '^/users$': ServerMethods.postUsers,
@@ -45,7 +46,7 @@ var SERVER_PATHS = {
   }
 };
 
-console.log('ARGS: ' + JSON.stringify(process.argv) + '\n');
+console.log('ARGS: ', JSON.stringify(process.argv));
 var server = new SimpleHTTPServer(process.argv[2] || DEFAULT_SERVER_PORT,
                                   SERVER_PATHS);
 
