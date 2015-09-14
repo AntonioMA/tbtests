@@ -38,6 +38,8 @@ var TokesServer = (function() {
 
   }
 
+  // Gets a new session id from the server. We're going to be astute here to
+  // reuse the server and just do a POST to /chats and ignore the token happily.
   // POST to /chats with
   // Request: (JSON encoded)
   // *  `invitee`: the name of the other user who is being invited to the chat
@@ -47,40 +49,26 @@ var TokesServer = (function() {
   // *  `sessionId`: an OpenTok session ID to conduct the chat within
   // *  `token`: a token that the creator of the chat (or inviter) can use to
   //             connect to the chat session
-  function getChatSession(aSelfNick, aNick, aSessionId) {
+  function getNewSessionId(aNick) {
     var dataToSend = {
       invitee: aNick
     };
-    return Utils.sendXHR('POST', '/chats', , 'application/json');
-  }
-
-  function eraseEndpoint(aSelfNick, aNick, aEndpoint, aSuccessCallback, aFailureCallback) {
-    throw 'NOT_IMPLEMENTED_YET';
-  }
-
-  function loadMyRemoteFriends(aSelfNick, aSuccessCallback, aFailureCallback) {
-    throw 'NOT_IMPLEMENTED_YET';
-  }
-
-  // What this really should do is to queue a notification for the friends
-  // that still don't know they're my friends
-  function saveFriendsToRemote(aSelfNick, aFriendList) {
-    throw 'NOT_IMPLEMENTED_YET';
+    return Utils.
+      sendXHR('POST', '/chats', JSON.stringify(dataToSend),
+              'application/json').
+      then(sessionData => sessionData.sessionId);
   }
 
   return {
     getPresenceSession: getPresenceSession,
     getPresenceToken: getPresenceToken,
-    getChatSession: getChatSession,
+    getNewSessionId: getNewSessionId,
     get friendServer() {
       return server;
     },
     set friendServer(aServer) {
       server = aServer;
     },
-    saveFriendsToRemote: saveFriendsToRemote,
-    loadMyRemoteFriends: loadMyRemoteFriends,
-    eraseEndpoint: eraseEndpoint,
     isConfigured: isConfigured
   };
 

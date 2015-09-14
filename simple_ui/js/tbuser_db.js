@@ -5,6 +5,18 @@ var TBUserDb = (function() {
 
   var DB_NAME = 'tbusers_db_test';
   var DB_VERSION = 1.0;
+
+  // tbUsers will hold:
+  // Key: sessionId:
+  //  {
+  //    sessionId: session ID used by the peer to contact me (incoming id)
+  //    nick: nick of the peer
+  //    remoteSessionId: session ID used to contact the peer (outgoing id)
+  //    updatePending: true if we need to update the peer with the data on the
+  //                   register
+  //    canContactUs: true if the peer can contactUs (we have/should have sent
+  //                  him the sessionId)
+  //   }
   var DB_TNAME = 'tbUsers';
 
   var MY_ID = 'id_self';
@@ -54,7 +66,7 @@ var TBUserDb = (function() {
 
   // DB_TNAME should have a valid IDBDatabase for these methods to work...
   // otherwise they'll happily fail.
-  function getNickForSessionId(aSessionId) {
+  function getRegisterForSessionId(aSessionId) {
     return new Promise((resolve, reject) => {
       var getRequest = database.
         transaction(DB_TNAME,'readonly').
@@ -66,7 +78,8 @@ var TBUserDb = (function() {
       };
 
       getRequest.onerror = function() {
-        debug("getNickForSession: get.onerror called" + getRequest.error.name);
+        debug("getRegisterForSession: get.onerror called" +
+              getRequest.error.name);
       };
     });
   }
@@ -89,23 +102,17 @@ var TBUserDb = (function() {
     });
   }
 
-  function setNickForSessionId(aSessionId, aNick, aRemoteSessionId) {
+  function updateRegister(aRegister) {
     return new Promise((resolve, reject) => {
       var putRequest = database.
         transaction(DB_TNAME,'readwrite').
         objectStore(DB_TNAME).
-        put(
-          {
-            sessionId: aSessionId,
-            nick: aNick,
-            remoteSessionId: aRemoteSessionId
-          }
-        );
+        put(aRegister);
       putRequest.onsuccess = resolve;
     });
   }
 
-  function getRegisteredNicks() {
+  function getRegisteredUsers() {
     return new Promise((resolve, reject) => {
       var returnedValue = [];
       var store = database.
@@ -113,7 +120,7 @@ var TBUserDb = (function() {
         objectStore(DB_TNAME);
       var readAllReq = store.openCursor();
       readAllReq.onsuccess = function() {
-        debug ("getRegisteredNicks: readAllReq.onsuccess called");
+        debug ("getRegisteredUsers: readAllReq.onsuccess called");
         var cursor = readAllReq.result;
         if (!cursor) {
           resolve(returnedValue);
@@ -144,14 +151,22 @@ var TBUserDb = (function() {
   }
 
   return {
-    getNickForSessionId: getNickForSessionId,
-    setNickForSessionId: setNickForSessionId,
+    getRegisterForSessionId: getRegisterForSessionId,
+    updateRegister: updateRegister,
     eraseSessionId: eraseSessionId,
-    getSelfNick: getNickForSessionId.bind(undefined, MY_ID),
-    setSelfNick: setNickForSessionId.bind(undefined, MY_ID),
-    getFriendServer: getNickForSessionId.bind(undefined, URL_PARTNER_SERVER),
-    setFriendServer: setNickForSessionId.bind(undefined, URL_PARTNER_SERVER),
-    getRegisteredNicks: getRegisteredNicks,
+    get selfNick() {
+      return getRegisterForSessionId(MY_ID);
+    },
+    set selfNick(aNick) {
+      return updateRegister({sessionId: MY_ID, nick: aNick});
+    },
+    get friendServer() {
+      return getRegisterForSessionId(URL_PARTNER_SERVER);
+    },
+    set friendServer(aNick) {
+      return updateRegister({sessionId: URL_PARTNER_SERVER, nick: aNick});
+    },
+    getRegisteredNicks: getRegisteredUsers,
     clearDB: clearDB,
     initDB: initDB
   };

@@ -2,27 +2,12 @@
 
 var OTHelper = (function() {
 
-  var debugPush = true;
-  var logger = new Utils.Logger('OTHelper');
+  var debugOTHelper = true;
+  var logger = new Utils.Logger('OTHelper', debugOTHelper);
   var debug = logger.log.bind(logger);
 
   // This will store the presence Session object
   var presenceSession = null;
-
-  // We need to get the session from the 
-  function getNewSessionId() {
-    debug('getNewSessionId');
-    return new Promise((resolve, reject) => {
-      throw 'NOT_IMPLEMENTED_YET';
-    });
-  }
-
-  function deleteSession(aSessionId) {
-    debug('deleteSession: ' + aSessionId);
-    return new Promise((resolve, reject) => {
-      throw 'NOT_IMPLEMENTED_YET';
-    });
-  }
 
   function sendCallTo(aConnection) {
     debug('sendCallTo: ' + JSON.stringify(aConnection));
@@ -31,7 +16,7 @@ var OTHelper = (function() {
     });
   }
 
-  function connectToPresenceSession(aConfig, aNick) {
+  function connectToPresenceSession(aConfig, aNick, aHandlers) {
     return TokesServer.
       getPresenceToken(aNick).
       then(tokenInfo => {
@@ -39,10 +24,7 @@ var OTHelper = (function() {
         // a) init the session object
         presenceSession = OT.initSession(aConfig.apiKey, aConfig.sessionId);
         // b) set the handlers (at least for connectionCreatedEvent)
-        presenceSession.
-          on({
-              connectionCreated: event => { throw 'NOT_IMPLEMENTED';}
-          });
+        presenceSession.on(aHandlers);
 
         // c) call session.connect and hope for the best
         return new Promise( (resolve, reject) =>
@@ -52,21 +34,35 @@ var OTHelper = (function() {
       });
   }
 
-  // Events that we can get:
-  // SessionConnectEvent => Session connected
-  // SessionDisconnectEvent => Sessino disconnected
-  // SignalEvent => We got mail!
-  // ConnectionEvent => Somebody (or us!) connected
-  function setPresenceHandlers(aHandlers) {
-    // aHandlers will be an array of {type: 'signalName', handler: handledFunc}
-    throw 'NOT_IMPLEMENTED_YET';
+  // Inform the peer (over the presence channel) of changes on what we
+  // know/expect about him. Basically it can set or delete the local
+  // sessionId he can use to connect to us. Modifies aRegister.updatePending
+  // if the update was successful
+  function updatePeer(aConnection, aReg, aSelfNick) {
+    return new Promise((resolve, reject) => {
+      if (!aConnection || !aReg.updatePending || !presenceSession) {
+        resolve(aReg);
+        return;
+      }
+      var signal = {
+        type: aReg.canContactUs ? 'setPeerSessionId': 'removePeerSessionId',
+        data: JSON.stringify({
+          nick: aSelfNick,
+          sessionId: aReg.sessionId
+        }),
+        to: aConnection
+      };
+      presenceSession.signal(signal, (error) => {
+        aReg.updatePending = !!error;
+        resolve(aReg);
+      });
+    });
   }
-
 
   return {
     connectToPresenceSession: connectToPresenceSession,
     sendCallTo: sendCallTo,
-    getNewSessionId: getNewSessionId,
-    setPresenceHandlers: setPresenceHandlers,
-    deleteSession: deleteSession  };
+    updatePeer: updatePeer
+  };
+
 })();
