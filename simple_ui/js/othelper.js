@@ -2,6 +2,9 @@
 
 var OTHelper = (function() {
 
+  var OPENTOK_SRC = 'https://static.opentok.com/webrtc/v2/js/opentok.js';
+
+  var otLoaded = LazyLoader.load(OPENTOK_SRC);
   var debugOTHelper = true;
   var logger = new Utils.Logger('OTHelper', debugOTHelper);
   var debug = logger.log.bind(logger);
@@ -9,17 +12,54 @@ var OTHelper = (function() {
   // This will store the presence Session object
   var presenceSession = null;
 
-  function sendCallTo(aConnection) {
+        // apiKey, sessionId, token
+  function acceptCall(aTokenInfo, aNick) {
+    return otLoaded.
+      then(() => {
+        return new Promise((resolve, reject) => {
+        // Pending to check, the way I believe this should go is:
+        // a) init the session object
+        var chatSession = OT.initSession(aTokenInfo.apiKey, aTokenInfo.sessionId);
+        // b) set the handlers (at least for connectionCreatedEvent)
+        // c) call session.connect and hope for the best
+          var peopleConnected = 0;
+          chatSession.on('connectionCreated', (evt) => {
+            peopleConnected++;
+            if (peopleConnected >= 2) {
+              resolve(chatSession);
+            }
+          });
+
+          chatSession.connect(aTokenInfo.token, error => error && reject(error));
+        });
+      });
+  }
+
+  function sendCallTo(aConnection, aSelfNick, aRemoteSession) {
     debug('sendCallTo: ' + JSON.stringify(aConnection));
     return new Promise((resolve, reject) => {
-      throw 'NOT_IMPLEMENTED_YET';
+      if (!aConnection || !presenceSession) {
+        reject('User not present or lost connection');
+        return;
+      }
+      var signal = {
+        type: 'incomingCall',
+        data: JSON.stringify({
+          nick: aSelfNick,
+          sessionId: aRemoteSession
+        }),
+        to: aConnection
+      };
+      presenceSession.signal(signal, (error) => {
+        error && reject(error) || resolve(aRemoteSession);
+      });
     });
   }
 
-  function connectToPresenceSession(aConfig, aNick, aHandlers) {
-    return TokesServer.
-      getPresenceToken(aNick).
-      then(tokenInfo => {
+  function connectToPresenceSession(aConfig, aToken, aNick, aHandlers) {
+    debug('connectToPresenceSession: ' + aNick + ' => ' + JSON.stringify(aHandlers));
+    return otLoaded.
+      then(() => {
         // Pending to check, the way I believe this should go is:
         // a) init the session object
         presenceSession = OT.initSession(aConfig.apiKey, aConfig.sessionId);
@@ -29,9 +69,28 @@ var OTHelper = (function() {
         // c) call session.connect and hope for the best
         return new Promise( (resolve, reject) =>
           presenceSession.
-            connect(tokenInfo.token,
+            connect(aToken,
                     error => (error && reject(error)) || resolve()));
       });
+  }
+
+  function initPublisher(aComponent) {
+    return new Promise((resolve, reject) => {
+      var publisher = OT.initPublisher(aComponent, (error) =>
+        (error && reject(error)) || resolve(publisher)
+      );
+    });
+  }
+
+  function addPublisherToSession(session, publisher) {
+    return new Promise((resolve, reject) => {
+      session.publish(publisher, (error) =>
+        (error && reject(error)) || resolve(session));
+    });
+  }
+
+  function publishStreams(aSession, aComponent) {
+    initPublisher.then(publisher => addPublisherToSession(aSession, publisher));
   }
 
   // Inform the peer (over the presence channel) of changes on what we
@@ -45,10 +104,10 @@ var OTHelper = (function() {
         return;
       }
       var signal = {
-        type: aReg.canContactUs ? 'setPeerSessionId': 'removePeerSessionId',
+        type: 'setPeerSessionId',
         data: JSON.stringify({
           nick: aSelfNick,
-          sessionId: aReg.sessionId
+          sessionId: aReg.canContactUs ? aReg.sessionId : null
         }),
         to: aConnection
       };
@@ -62,7 +121,8 @@ var OTHelper = (function() {
   return {
     connectToPresenceSession: connectToPresenceSession,
     sendCallTo: sendCallTo,
-    updatePeer: updatePeer
+    updatePeer: updatePeer,
+    publishStream: publishStreams
   };
 
 })();

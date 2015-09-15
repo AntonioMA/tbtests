@@ -6,60 +6,62 @@
     <title>TokesApp</title>
 
     <!-- Stable Building blocks -->
-    <link rel="stylesheet" type="text/css" href="shared/style/headers.css">
-    <link rel="stylesheet" type="text/css" href="shared/style/edit_mode.css">
-    <link rel="stylesheet" type="text/css" href="shared/style/input_areas.css">
-    <link rel="stylesheet" type="text/css" href="shared/style/switches.css">
-    <link rel="stylesheet" type="text/css" href="shared/style/confirm.css">
-    <link rel="stylesheet" type="text/css" href="shared/style_unstable/progress_activity.css">
-    <link rel="stylesheet" type="text/css" href="shared/style_unstable/lists.css">
-    <link rel="stylesheet" type="text/css" href="shared/style_unstable/tabs.css">
-    <!-- App styles -->
-    <link rel="stylesheet" type="text/css" href="style/sms.css">
-    <link rel="stylesheet" type="text/css" href="style/root.css">
+    <link rel="stylesheet" type="text/css" href="css/components.telefonica.min.css">
 
-    <script type="text/javascript" src="js/utils.js"></script>
-    <script type="text/javascript" src="js/tokesServer.js"></script>
-    <script type="text/javascript" src="js/tbuser_db.js"></script>
+    <script type="text/javascript" src="js/lazy_loader.js"></script>
     <script type="text/javascript" src="js/tokesApp.js"></script>
-    <script type="text/javascript" src="js/othelper.js"></script>
   </head>
   <body role="application">
-    <article id="self-nick-wrapper">
-      <section class="panel" role="region">
-        <header>
-          <h1 id="self-nick-header">Tokes App - Self-Nick</h1>
-        </header>
-        <form id="login-form">
-          <label for="self-nick">Type your Nick:</label>
-          <input id="self-nick" name="self-nick" type="text" value=""/>
-          <label for="server">Type the Friend Server URL:</label>
-          <input id="server" name="server" type="text" value=""/>
-        </form>
-        <button id="login-button">
-          <span class="icon icon-close">Login</span>
-        </button>
-      </section>
-    </article>
 
-    <article id="main-window">
-      <section id="friend-list" class="panel" role="region">
-        <header class="view-header regular-header">
-          <h1 id="header-text" data-l10n-id="messages" aria-hidden="true">TokesApp</h1>
-          <form id="messages-tel-form">
-            <input id="receiver-input" type="text" name="tel" class="tel" />
-            <span id="clear-search" role="button" class="icon icon-clear"></span>
-          </form>
-        </header>
-        <article id="friends-container" class="view-body" data-type="list">
-        </article>
-        <form role="search" id="add-friend-form" class="bottom new-sms-form">
-          <button id="add-friend-button" disabled type="submit">Add Friend</button>
-          <p>
-            <input type="text" id="friend-to-add" name="friend-to-add" placeholder="Friend Nick"/>
-          </p>
-        </form>
-      </section>
-    </article>
+    <div id="self-nick-wrapper" class="tc-dialog">
+      <header>
+        <h3 id="self-nick-header">Tokes App - Id</h1>
+      </header>
+      <form id="login-form">
+        <div class="tc-row">
+          <label for="self-nick">Type your Nick:</label>
+          <input id="self-nick" class="tc-input block" name="self-nick" type="text" value=""/>
+        </div>
+        <div class="tc-row">
+          <label for="server">Type the Friend Server URL:</label>
+          <input id="server" class="tc-input block" name="server" type="text" value=""/>
+        </div>
+        <footer>
+          <button class ="tc-button" id="login-button">
+            <span class="icon icon-close">Login</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+
+    <div id="main-window" class="tc-wrapper tc-content">
+      <header class="tc-header">
+        <nav>
+          <ul id="menu">
+            <li><span id="header-text">Hello USER HERE!!!!</span><i data-icon="user"></i></li>
+            <li><a href=""><span>Help</span><i data-icon="help_circle"></i></a></li>
+            <li><a href=""><span>Exit</span><i data-icon="close_circle"></i></a></li>
+          </ul>
+        </nav>
+        <h1><a href="/">Test App</a></h1>
+        <h2>Tokbox</h2>
+      </header>
+      <div id="friend-list">
+        <div id="friends-container" class="tc-list">
+        </div>
+        <footer>
+          <div id="add-friend-container" class="tc-wrapper">
+            <form id="add-friend-form">
+              <button id="add-friend-button" disabled type="submit" class="tc-button">Add Friend</button>
+              <input class="tc-input" type="text" id="friend-to-add" name="friend-to-add" placeholder="Friend Nick"/>
+            </form>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <div id="video-wrapper" class="tc-wrapper tc-content">
+    </div>
+
   </body>
 </html>

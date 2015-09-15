@@ -5,12 +5,12 @@ var TokesApp = (function() {
   'use strict';
 
   var debugTokes = true;
-
-  var logger = new Utils.Logger('TokesServer', debugTokes);
-  var debug = logger.log.bind(logger);
+  var debug = () => {};
 
   // This can/have to be changed to allow different kind of servers easily
-  var Server = TokesServer;
+  var Server;
+
+  var friendList;
 
   var self = this;
 
@@ -23,8 +23,8 @@ var TokesApp = (function() {
   var mainWrapper = null;
   var selfNickWrapper = null;
   var addFriendButton = null;
-  var friendsContainer = null;
   var friendNickField = null;
+  var videoWrapper = null;
 
   var IMG_SEND = 'style/icons/out.jpg';
   var IMG_ERASE = 'style/icons/clear.png';
@@ -51,6 +51,78 @@ var TokesApp = (function() {
     return undefined;
   }
 
+  function smartUpdateRegister(aFriendReg) {
+    var i = getFriendFromList(aFriendReg.nick);
+
+    // If it doesn't exist and we can't call nor be called, do nothing
+    if ((i === undefined) && !aFriendReg.canContactUs && !aFriendReg.remoteSessionId) {
+      return Promise.resolve(aFriendReg);
+    }
+
+    if (i === undefined) {
+      // New friend
+      i = myFriends.push(aFriendReg);
+      i--;
+    }
+
+    if (aFriendReg.canContactUs || aFriendReg.remoteSessionId) {
+      // add or update
+      return TBUserDb.updateRegister(aFriendReg);
+    } else {
+      // erase
+      return TBUserDb.
+        eraseSessionId(aFriendReg.sessionId).
+        then(() => {
+          delete myFriends[i];
+        });
+    }
+  }
+
+
+  var waitingOnAnswer;
+
+  /* Buttons that can be added to each friend row. Each element must have
+   *  shoulAdd (friend) => boolean (true if the button must be added for that friend)
+   *  handler (friend) => function (function that should be called with the button is pressed)
+   */
+  var toolbarButtons = {
+    'Call': {
+      shouldAdd: friend => friend.remoteSessionId && connectedFriends[friend.remoteSessionId],
+      negative: false,
+      getHandler: friend => {
+        var handler = function() {
+          debug('Somebody clicked! Sending Call to ' + arguments[1] + '' +
+                ' on ' +  arguments[0]);
+          // TO-DO: UI UI UI Besides sending the call we should show something here!
+          OTHelper.
+            sendCallTo(arguments[0], selfNick, arguments[1]).
+            then(remoteSession => waitingOnAnswer = remoteSession).
+            then(Server.getCallToken).
+            then(aTokenInfo => OTHelper.acceptCall(aTokenInfo, selfNick)).
+            then(session => {
+              // Enable the chat div and disable the other temporarily...
+              switchVideo();
+              // and then...
+              OTHelper.publishStreams(session, videoWrapper);
+            }).
+            catch(error => debug('Error calling: ' + JSON.stringify(error)));
+        }.bind(undefined, connectedFriends[friend.remoteSessionId], friend.remoteSessionId);
+        return handler;
+      }
+    },
+    'Erase': {
+      shouldAdd: friend => friend.canContactUs,
+      negative: true,
+      getHandler: friend => {
+        var handler = function() {
+          eraseLocalFriend(arguments[0]);
+        }.bind(undefined, friend.nick);
+        return handler;
+      }
+    }
+  };
+
+
   // This should:
   // 1. Set canContactUs to false
   // 2. Inform the remote user that he can't call us anymore
@@ -58,119 +130,23 @@ var TokesApp = (function() {
   // On this version, we're going to happily assume no failures...
   function eraseLocalFriend(aNick) {
     var i = getFriendFromList(aNick);
-    // It erases only if there was no remote endpoint for this
-    // user. Otherwise it just removes the ability for the peer to
-    // contact us.
-    function eraseFromDb() {
-      // Ignoring aUnregisterSuccess for the time being
-      if (myFriends[i].remoteSessionId === undefined) {
-        TBUserDb.
-          eraseSessionId(myFriends[i].sessionId).
-          then(() => {
-            delete myFriends[i];
-            updateFriendList(); // Programmer efficiency FTW :P
-          });
-      } else {
-        myFriends[i].canContactUs = false;
-        myFriends[i].updatePending = true;
-        OTHelper.
-          updatePeer(connectedFriends[myFriends[i].remoteSessionId],
-                     myFriends[i], selfNick).
-          then(TBUserdDb.updateRegister);
-      }
+
+    if (i === undefined) {
+      return;
     }
 
-    (i !== undefined) && eraseFromDb();
-  }
-
-
-  /**
-   *  What should the LI have? something like
-   *  <aside class='pack-end'> <!-- only if it's a local friend -->
-   *    <img alt='placeholder' src='erase.jpg' onclick='eraseFriend'>
-   *  </aside>
-   *  <aside class='icon'>
-   *    <img src='typeoffriend.jpg'>
-   *  </aside>
-   *  <p onclick='sendToke'> Friend Nick </p>
-   *
-   */
-  function createLIContent(aUl, aFriend) {
-    var li = Utils.createElementAt(aUl, 'li', {id: 'li-nick-' + aFriend.nick});
-
-    // Add the send button...
-    var sendToke = undefined;
-    if (aFriend.remoteSessionId && connectedFriends[aFriend.remoteSessionId]) {
-      var asideTOF =
-        Utils.createElementAt(li, 'aside',
-                              { id: 'aside-tof-nick-' + aFriend.nick });
-      var imgTOF =
-        Utils.createElementAt(asideTOF, 'img',
-                              {
-                                id: 'img-nick-' + aFriend.nick,
-                                src: IMG_SEND
-                              }
-        );
-      sendToke = function() {
-        debug('Somebody clicked! Sending Call to ' + arguments[1] + '' +
-              ' on ' +  arguments[0]);
-        OTHelper.sendCallTo(arguments[0]);
-      }.bind(undefined, connectedFriends[aFriend.remoteSessionId], aFriend.nick);
-      asideTOF.onclick = sendToke;
+    if (myFriends[i].canContactUs) {
+      myFriends[i].canContactUs = false;
+      myFriends[i].updatePending = true;
     }
-
-    // Add the erase button
-    if (aFriend.canContactUs) {
-      var asideErase = Utils.createElementAt(li, 'aside',
-          {
-            id: 'aside-erase-nick-' + aFriend.nick,
-            'class': 'pack-end'
-          }
-      );
-      var imgErase = Utils.createElementAt(asideErase, 'img',
-        {
-          id: 'img-nick-' + aFriend.nick,
-          src: IMG_ERASE
-        }
-      );
-      asideErase.onclick = function() {
-        eraseLocalFriend(arguments[0]);
-      }.bind(undefined, aFriend.nick);
-    }
-    // And finally the name
-    var nameHolder = Utils.createElementAt(li, 'p',
-                                           { id: 'txt-nick-' + aFriend.nick },
-                                           aFriend.nick);
-    if (sendToke) {
-      nameHolder.onclick = sendToke;
-    }
-
-    return li;
-  }
-
-  /**
-   * What I'll have on the HTML:
-   * <ul id='all-friends-lists' class='whatever'>
-   *   <li id='friend-id-' + nick onclick='clickOnFriend(sId);'> LI-CONTENT </li>
-   * </ul>
-   */
-  function updateFriendList() {
-    // I could prolly do this on a nicer way, but this works also...
-    friendsContainer.innerHTML = '';
-
-    // The way this works is:
-    var ul = Utils.createElementAt(friendsContainer, 'ul',
-                                   {id:'ul-friend-list'});
-    for (var i in myFriends) {
-      createLIContent(ul, myFriends[i]);
-    }
+    // Update the peer if available, then erase/update the DB, then update the screen
+    OTHelper.
+      updatePeer(connectedPeers[myFriends[i].nick], myFriends[i], selfNick).
+      then(smartUpdateRegister).
+      then(() => friendList.update(myFriends, toolbarButtons));
   }
 
   function addPeerSessionId(aNick, aSessionId) {
-    var ul =
-      document.getElementById('ul-friend-list') ||
-        Utils.createElementAt(friendsContainer, 'ul',
-                              {id:'ul-friend-list'});
 
     // We could get this from onAddFriendClick but it might have changed since
     // we could queue several add and delete operations....
@@ -181,7 +157,7 @@ var TokesApp = (function() {
       newFriend = myFriends[i];
       newFriend.canContactUs = true;
       newFriend.updatePending = true;
-      updateFriendList();
+      friendList.update(myFriends, toolbarButtons);
     } else {
       newFriend = {
         nick: aNick,
@@ -190,18 +166,22 @@ var TokesApp = (function() {
         updatePending: true,
         remoteSessionId: undefined
       };
-      myFriends.push(newFriend);
-      createLIContent(ul, newFriend);
+      friendList.addNew(newFriend, toolbarButtons);
     }
     OTHelper.
       updatePeer(connectedPeers[aNick], newFriend, selfNick).
-      then(TBUserDb.updateRegister);
+      then(smartUpdateRegister);
   }
 
   function updateConnection(aAdd, aEvt) {
     var connection = aEvt.connection;
     var connectionData = JSON.parse(connection.data);
     var nick = connectionData.name;
+    // Ignore myself
+    debug('updateConnection: ' + aAdd + ' - ' + nick);
+    if (nick === selfNick) {
+      return;
+    }
     var i = getFriendFromList(nick);
 
     if (aAdd) {
@@ -221,9 +201,77 @@ var TokesApp = (function() {
     }
     // I shouldn't do this on every connection but wait till it has
     // finished... sadly there's no 'no more connections' event.
-    updateFriendList();
+    friendList.update(myFriends, toolbarButtons);
   }
 
+  // This can be used to set a new remote session id or to erase it.
+  function setRemoteSessionId(evt) {
+    var data = JSON.parse(evt.data);
+    var peer = data.nick;
+    var i = getFriendFromList(peer);
+
+    //  b) It's an erase and we don't have the friend or it's only local => return
+    if (!data.sessionId && (i === undefined || !myFriends[i].remoteSessionId)) {
+      return;
+    }
+
+    var friendPromise = (i !== undefined && Promise.resolve(myFriends[i])) ||
+      Server.getNewSessionId(peer).then(aSessionId => {
+        var newFriend = {
+          nick: peer,
+          sessionId: aSessionId,
+          canContactUs: false,
+          updatePending: false,
+          remoteSessionId: data.sessionId
+        };
+        return newFriend;
+      });
+
+    friendPromise.then(friendReg => {
+      // We should update the connectedFriends list since we have a new friend...
+      // or we have lost one.
+      if (friendReg.remoteSessionId) {
+        delete connectedFriends[friendReg.remoteSessionId];
+      }
+      if (data.sessionId) {
+        connectedFriends[data.sessionId] = connectedPeers[friendReg.nick];
+      }
+      friendReg.remoteSessionId = data.sessionId || undefined;
+      smartUpdateRegister(friendReg).
+        then(() => friendList.update(myFriends, toolbarButtons));
+    });
+  }
+
+
+  // data {nick, sessionId}
+  function incomingCall(evt) {
+    var data = JSON.parse(evt.data);
+    var peer = data.nick;
+    var i = getFriendFromList(peer);
+    if (i === undefined || myFriends[i].sessionId !== data.sessionId) {
+      debug('We got an incoming call from ' + data.nick + ' but either we do not know him or the' +
+            'session is incorrect');
+      // TO-DO should we reject the call?
+      return;
+    }
+    // TO-DO Show the ui, for now just accept it magically
+    Server.getCallToken(data.sessionId).
+      then(aTokenInfo => OTHelper.acceptCall(aTokenInfo, data.nick)).
+      then(session => {
+              // Enable the chat div and disable the other temporarily...
+              switchVideo();
+              // and then...
+              OTHelper.publishStreams(session, videoWrapper);
+      });
+  }
+
+  function cancelCall(evt) {
+    throw 'NOT_IMPLEMENTED_YET';
+  }
+
+  function acceptCall(evt) {
+    throw 'NOT_IMPLEMENTED_YET';
+  }
   // Handlers for the presence session
   // The presence session is used to keep track of the connected users. I will
   // need to:
@@ -239,39 +287,15 @@ var TokesApp = (function() {
   var presenceHandlers = {
     connectionCreated: updateConnection.bind(undefined, true),
     connectionDestroyed: updateConnection.bind(undefined, false),
-    signal: evt => {
-      var data = JSON.parse(evt.data);
-      var peer = data.nick;
-      var i = getFriendFromList(peer);
-      var friendPromise = (i !== undefined && Promise.resolve(myFriends[i])) ||
-        Server.getNewSessionId(peer).then(aSessionId => {
-          return {
-            nick: peer,
-            sessionId: aSessionId,
-            canContactUs: false,
-            updatePending: false,
-            remoteSessionId: data.sessionId
-          };
-        });
-
-      switch(evt.type) {
-        case 'setPeerSessionId':
-          friendReg.remoteSessionId = data.sessionId;
-          break;
-        case 'removePeerSessionId':
-          delete friendReg.remoteSessionId;
-          break;
-        case 'connectCall':
-        case 'cancelCall':
-      }
-    }
+    'signal:setPeerSessionId': setRemoteSessionId,
+    'signal:incomingCall': incomingCall,
+    'signal:acceptCall': acceptCall,
+    'signal:cancelCall': cancelCall
   };
 
 
   // Self explanatory :P
   function onLoginClick(evt) {
-    // Register the handlers for the presence session...
-    OTHelper.setPresenceHandlers();
 
     if (evt && evt.preventDefault) {
       evt.preventDefault();
@@ -288,15 +312,20 @@ var TokesApp = (function() {
     selfNickWrapper.style.display = 'none';
     mainWrapper.style.display = '';
     document.getElementById('header-text').textContent =
-      'TokesApp (' + selfNick + ')';
+      'Hello ' + selfNick;
 
     TBUserDb.getRegisteredUsers().
       then(internalFriends =>  {
         myFriends = internalFriends;
-        return OTHelper.
-          connectToPresenceSession(presenceSessionConfig,
-                                   selfNick,
-                                   presenceHandlers);
+        // Do a first update with the local list...
+        friendList.update(myFriends, toolbarButtons);
+        return TokesServer.
+          getPresenceToken(selfNick).
+          then(token => OTHelper.
+              connectToPresenceSession(presenceSessionConfig,
+                                       token,
+                                       selfNick,
+                                       presenceHandlers));
       });
   }
 
@@ -337,7 +366,7 @@ var TokesApp = (function() {
 
     // Either we don't know anything about that user yet, or
     // we already can contact him but not the reverse...
-    var newSessionPromise = (i === undefined) ?
+    var newSessionPromise = (i !== undefined) ?
       Promise.resolve(myFriends[i].sessionId) :
       Server.getNewSessionId(aNick);
 
@@ -348,7 +377,22 @@ var TokesApp = (function() {
     addFriendButton.disabled = friendNickField.value === '';
   }
 
+  function switchVideo() {
+    // TO-DO I'm pretty sure there's a better way to do this!!!
+    if (videoWrapper.style.display == '') {
+      mainWrapper.style.display = '';
+      videoWrapper.style.display = 'none';
+    } else {
+      mainWrapper.style.display = 'none';
+      videoWrapper.style.display = '';
+    }
+  }
+
   function init() {
+    var logger = new Utils.Logger('TokesServer', debugTokes);
+    debug = logger.log.bind(logger);
+    Server = TokesServer;
+
     debug('init called');
 
     selfNickField = document.getElementById('self-nick');
@@ -356,10 +400,12 @@ var TokesApp = (function() {
     serverField = document.getElementById('server');
     addFriendButton = document.getElementById('add-friend-button');
     mainWrapper = document.getElementById('main-window');
-    friendsContainer = document.getElementById('friends-container');
+    videoWrapper = document.getElementById('video-wrapper');
+    friendList = new FriendListView(document.getElementById('friends-container'));
 
     // I'm pretty sure there's a better way to do this!!!
     mainWrapper.style.display = 'none';
+    videoWrapper.style.display = 'none';
 
     selfNickWrapper = document.getElementById('self-nick-wrapper');
     friendNickField = document.getElementById('friend-to-add');
@@ -381,26 +427,6 @@ var TokesApp = (function() {
 
   }
 
-/*
-  function processPushRegister(e) {
-    TBUserDb.getRegisteredNicks().then( internalFriends => {
-      for (var i in internalFriends) {
-        //This verification should no be necessary, if it doesn't have a
-        // sessionIdn then it will not be in the db.
-        //But it doesn't hurt either
-        if (internalFriends[i].sessionId !== undefined) {
-          TBUserDb.eraseSessionId(internalFriends[i].sessionId).
-            then( () => {
-              OTHelper.
-                getNewSession().
-                then(addFriendEP.bind(undefined, internalFriends[i].nick));
-            });
-        }
-      }
-    });
-  }
-*/
-
   return {
     init: init,
     setSelfNick: setSelfNick,
@@ -410,11 +436,20 @@ var TokesApp = (function() {
 })();
 
 window.addEventListener('load', function showBody() {
-  console.log('loadHandler called');
-  TBUserDb.initDB().then(function() {
-    TokesApp.init();
-    TBUserDb.selfNick.then(TokesApp.setSelfNick);
-    TBUserDb.friendServer.then(TokesApp.setFriendServer);
-  });
+    LazyLoader.dependencyLoad([
+      'js/utils.js',
+      'js/friendList.js',
+      'js/tokesServer.js',
+      'js/tbuser_db.js',
+      'js/othelper.js'
+    ]).then(() => {
+      console.log('loadHandler called');
+
+      TBUserDb.initDB().then(function() {
+      TokesApp.init();
+      TBUserDb.selfNick.then(TokesApp.setSelfNick);
+      TBUserDb.friendServer.then(TokesApp.setFriendServer);
+      });
+    });
 
 });

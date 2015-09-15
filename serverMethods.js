@@ -200,7 +200,6 @@ function ServerMethods() {
       } catch(e) {
         token = null;
       }
-      logger.log('TESTESTEST', token, JSON.stringify(aParams));
       if (token) {
         return Promise.resolve({
           apiKey: tbConfig.apiKey,

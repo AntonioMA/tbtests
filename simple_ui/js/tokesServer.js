@@ -19,14 +19,17 @@ var TokesServer = (function() {
   }
 
   function getPresenceSession() {
+    debug('getPresenceSession()');
     return Utils.sendXHR('GET', server + '/presence').then(aConfig => {
-      config = _aConfig;
+      config = aConfig;
       return config;
     });
   }
 
   // Do a POST to /users to get the token
   function getPresenceToken(aNick) {
+    debug('getPresenceToken: ' + aNick);
+
     // Note that the other UI sends also a status, connected and token fields
     // which the server promptly goes and ignore
     var dataToSend = {
@@ -59,6 +62,11 @@ var TokesServer = (function() {
       then(sessionData => sessionData.sessionId);
   }
 
+  function getCallToken(aSession) {
+    return Utils.
+      sendXHR('GET', '/chats?sessionId=' + encodeURIComponent(aSession));
+  }
+
   return {
     getPresenceSession: getPresenceSession,
     getPresenceToken: getPresenceToken,
@@ -69,7 +77,8 @@ var TokesServer = (function() {
     set friendServer(aServer) {
       server = aServer;
     },
-    isConfigured: isConfigured
+    isConfigured: isConfigured,
+    getCallToken: getCallToken
   };
 
 })();

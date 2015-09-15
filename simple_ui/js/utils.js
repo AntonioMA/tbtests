@@ -40,7 +40,7 @@ var Utils = (function() {
       xhr.overrideMimeType("application/json");
       if (aDataType) {
         xhr.setRequestHeader("Content-Type", aDataType); // Note that this requires
-          xhr.setRequestHeader("Content-Length", aData.length);
+        xhr.setRequestHeader("Content-Length", aData.length);
       }
 
       xhr.onload = function (aEvt) {
@@ -63,10 +63,10 @@ var Utils = (function() {
 // This exists only so I don't have to keep remembering how to do it...
 //////////////////////////////////////////////////////////////////////////////
   function addText(aElem, aText) {
-    aElem.appendChild(document.createTextNode(aText));
+    return aElem.appendChild(document.createTextNode(aText));
   }
 
-  function createElementAt(aMainBody, aType, aAttrs, aOptionalText, aBefore) {
+  function createElement(aType, aAttrs, aOptionalText) {
     var elem = document.createElement(aType);
 
     // Add all the requested attributes
@@ -76,14 +76,20 @@ var Utils = (function() {
       }
     }
 
+    if (aOptionalText) {
+      addText(elem, aOptionalText);
+    }
+
+    return elem;
+  }
+
+  function createElementAt(aMainBody, aType, aAttrs, aOptionalText, aBefore) {
+    var elem = createElement(aType, aAttrs, aOptionalText);
+
     if (!aBefore) {
       aMainBody.appendChild(elem);
     } else {
-      mainBody.insertBefore(elem, aBefore);
-    }
-
-    if (aOptionalText) {
-      addText(elem, aOptionalText);
+      aMainBody.insertBefore(elem, aBefore);
     }
 
     return elem;
@@ -96,7 +102,8 @@ var Utils = (function() {
     sendXHR: sendXHR,
     Logger: SimpleLogger,
     addText: addText,
-    createElementAt: createElementAt
+    createElementAt: createElementAt,
+    createElement: createElement
   };
 
 })();

@@ -166,26 +166,11 @@ var TBUserDb = (function() {
     set friendServer(aNick) {
       return updateRegister({sessionId: URL_PARTNER_SERVER, nick: aNick});
     },
-    getRegisteredNicks: getRegisteredUsers,
+    getRegisteredUsers: getRegisteredUsers,
     clearDB: clearDB,
     initDB: initDB
   };
 
 })();
 
-/*
 
-// Usage sample
-PushDb.setSelfNick('pepito');
-PushDb.getSelfNick().then(function (aValue) {
-  console.log("My nick is " + JSON.stringify(aValue));
-});
-PushDb.setNickForSessionId('an_invented_ep','friend_of_myself');
-PushDb.setNickForSessionId('other_invented_ep','friend_of_myself');
-PushDb.getRegisteredNicks().then(function (values) {
-  values.forEach(function (value) {
-    console.log("Read value: "+ JSON.stringify(value));
-  });
-});
-
-*/
