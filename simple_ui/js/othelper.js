@@ -56,7 +56,7 @@ var OTHelper = (function() {
     });
   }
 
-  function connectToPresenceSession(aConfig, aToken, aNick, aHandlers) {
+  function connectToPresenceSession(aConfig, aTokenInfo, aNick, aHandlers) {
     debug('connectToPresenceSession: ' + aNick + ' => ' + JSON.stringify(aHandlers));
     return otLoaded.
       then(() => {
@@ -69,7 +69,7 @@ var OTHelper = (function() {
         // c) call session.connect and hope for the best
         return new Promise( (resolve, reject) =>
           presenceSession.
-            connect(aToken,
+            connect(aTokenInfo.token,
                     error => (error && reject(error)) || resolve()));
       });
   }
