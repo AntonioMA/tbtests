@@ -19,6 +19,10 @@ redis-cli set tb_api_secret yoursecrethere
 Also the code uses some of Harmony new features (concretely arrow
 functions)... so you'll need a recent version of node.
 
+## Prerequisites:
+NodeJS >= 0.12 (>=4.0 recommended)
+Redis
+
 ## Installation
 
 ```
@@ -30,7 +34,16 @@ Sorry about that :P
 ## Running
 
 ```
-node --harmony server.js [listening port]
+node --harmony server.js [[listening port] [static files directory]]
 ```
 
-At this moment this is just a node implementation of the presencekit PHP sample (serving that same client code). That can (and probably will change).
+or
+
+```
+node server.js [[listening port] [static files directory]]
+```
+
+if you're running NodeJS>=4.0 (I wasn't kidding about using a recent version of Node ;))
+
+By default it listens on the port 8123 and serves the static file from original_ui (which is the same ui from the Opentok presence kit)
+
