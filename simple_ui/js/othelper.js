@@ -12,28 +12,59 @@ var OTHelper = (function() {
   // This will store the presence Session object
   var presenceSession = null;
 
-        // apiKey, sessionId, token
-  function acceptCall(aTokenInfo, aNick) {
-    debug('acceptCall(' + aNick + '): ' + JSON.stringify(aTokenInfo));
+
+  function _connectToSession(aSession, aApiKey, aToken, aHandlerTemplates) {
+    debug('_connectToSession');
     return otLoaded.
       then(() => {
-        return new Promise((resolve, reject) => {
         // Pending to check, the way I believe this should go is:
         // a) init the session object
-        var chatSession = OT.initSession(aTokenInfo.apiKey, aTokenInfo.sessionId);
+        var _session = OT.initSession(aApiKey, aSession);
         // b) set the handlers (at least for connectionCreatedEvent)
-        // c) call session.connect and hope for the best
-          var peopleConnected = 0;
-          chatSession.on('connectionCreated', (evt) => {
-            peopleConnected++;
-            if (peopleConnected >= 2) {
-              resolve(chatSession);
-            }
-          });
+        // Nifty trick to get a reference to the session inside the handler...
+        // Where by 'nifty' I mean dirty
+        var _handlers = {};
+        Object.
+          keys(aHandlerTemplates).
+          forEach(aEvtName => _handlers[aEvtName] = aHandlerTemplates[aEvtName].bind(_session));
+        _session.on(_handlers);
 
-          chatSession.connect(aTokenInfo.token, error => error && reject(error));
-        });
+        // c) call session.connect and hope for the best
+        return new Promise( (resolve, reject) =>
+          _session.
+            connect(aToken,
+                    error => (error && reject(error)) || resolve(_session)));
+    });
+  }
+
+  function connectToPresenceSession(aConfig, aTokenInfo, aNick, aHandlers) {
+    debug('connectToPresenceSession: ' + aNick + ' => ' + JSON.stringify(aHandlers));
+    return _connectToSession(aConfig.sessionId, aConfig.apiKey, aTokenInfo.token, aHandlers).
+      then(aSession => presenceSession = aSession);
+  }
+
+
+  // apiKey, sessionId, token
+  function acceptCall(aTokenInfo, aNick, aHandlers) {
+    debug('acceptCall(' + aNick + '): ' + JSON.stringify(aTokenInfo));
+    return _connectToSession(aTokenInfo.sessionId, aTokenInfo.apiKey, aTokenInfo.token, aHandlers);
+  }
+
+  // 
+  function endCall(aChatSession) {
+    debug('endCall');
+    return new Promise((resolve, reject) =>{
+      aChatSession.on('sessionDisconnected', evt => {
+        debug('endCall: session disconnected');
+        // Note that I don't know if this is expected or not...
+        aChatSession.off();
+        resolve();
       });
+      // If we haven't disconnected in 3 seconds, something's broken
+      setTimeout(reject, 3000);
+      aChatSession.disconnect();
+    });
+//    aChatSession
   }
 
   function sendCallTo(aConnection, aSelfNick, aRemoteSession) {
@@ -57,24 +88,6 @@ var OTHelper = (function() {
     });
   }
 
-  function connectToPresenceSession(aConfig, aTokenInfo, aNick, aHandlers) {
-    debug('connectToPresenceSession: ' + aNick + ' => ' + JSON.stringify(aHandlers));
-    return otLoaded.
-      then(() => {
-        // Pending to check, the way I believe this should go is:
-        // a) init the session object
-        presenceSession = OT.initSession(aConfig.apiKey, aConfig.sessionId);
-        // b) set the handlers (at least for connectionCreatedEvent)
-        presenceSession.on(aHandlers);
-
-        // c) call session.connect and hope for the best
-        return new Promise( (resolve, reject) =>
-          presenceSession.
-            connect(aTokenInfo.token,
-                    error => (error && reject(error)) || resolve()));
-      });
-  }
-
   function initPublisher(aComponent) {
     debug('initPublisher');
     return new Promise((resolve, reject) => {
@@ -84,11 +97,11 @@ var OTHelper = (function() {
     });
   }
 
-  function addPublisherToSession(session, publisher) {
+  function addPublisherToSession(aSession, aPublisher) {
     debug('addPublisherToSession: ' + aSession);
     return new Promise((resolve, reject) => {
-      session.publish(publisher, (error) =>
-        (error && reject(error)) || resolve(session));
+      aSession.publish(aPublisher, (error) =>
+        (error && reject(error)) || resolve(aSession));
     });
   }
 
@@ -127,7 +140,8 @@ var OTHelper = (function() {
     sendCallTo: sendCallTo,
     updatePeer: updatePeer,
     publishStreams: publishStreams,
-    acceptCall: acceptCall
+    acceptCall: acceptCall,
+    endCall: endCall
   };
 
 })();

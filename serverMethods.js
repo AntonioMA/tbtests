@@ -190,13 +190,16 @@ function ServerMethods() {
   // be given an independent URI. The invitee would then GET that specific
   // resource.  The response would then contain the `sessionId` and an
   // appropriate token (invitee or inviter) based on user authentication.
+  var numSession = 0;
   var getChats =
     _commonGet.bind(undefined, 'getChats',
                     (tbConfig, aParsedURL, aParsedPath, aParams) => {
       // aParams.sessionId has the session we want to join...
 
       try {
-        var token = opentok.generateToken(aParams.sessionId);
+        var token = opentok.generateToken(aParams.sessionId, {
+          data: JSON.stringify(numSession++)
+        });
       } catch(e) {
         token = null;
       }

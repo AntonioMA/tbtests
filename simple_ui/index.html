@@ -15,7 +15,7 @@
 
     <div id="self-nick-wrapper" class="tc-dialog">
       <header>
-        <h3 id="self-nick-header">Tokes App - Id</h1>
+        <h3 id="self-nick-header">Tokes App - Id</h3>
       </header>
       <form id="login-form">
         <div class="tc-row">
@@ -27,7 +27,7 @@
           <input id="server" class="tc-input block" name="server" type="text" value=""/>
         </div>
         <footer>
-          <button class ="tc-button" id="login-button">
+          <button class="tc-button" id="login-button">
             <span class="icon icon-close">Login</span>
           </button>
         </footer>
@@ -46,7 +46,8 @@
         <h1><a href="/">Test App</a></h1>
         <h2>Tokbox</h2>
       </header>
-      <div id="friend-list">
+
+      <div id="friend-list-wrapper">
         <div id="friends-container" class="tc-list">
         </div>
         <footer>
@@ -58,9 +59,23 @@
           </div>
         </footer>
       </div>
-    </div>
 
-    <div id="video-wrapper" class="tc-wrapper tc-content">
+      <div id="video-wrapper" class="tc-wrapper tc-content">
+        <header>
+          <h3 id="oncall-partner-nick-header">Hi there</h3>
+        </header>
+
+        <ul id="opentok-wrapper" class="tc-gutter" data-columns="2">
+        </ul>
+
+        <footer>
+          <!-- Add here the buttons to control the 'call' -->
+          <button class="tc-button negative" id="oncall-end-button">
+            <span class="icon icon-close">End Call</span>
+          </button>
+        </footer>
+      </div>
+
     </div>
 
   </body>

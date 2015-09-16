@@ -21,6 +21,7 @@ var TokesApp = (function() {
   var serverField = null;
   var loginButton = null;
   var mainWrapper = null;
+  var friendListWrapper = null;
   var selfNickWrapper = null;
   var addFriendButton = null;
   var friendNickField = null;
@@ -79,7 +80,84 @@ var TokesApp = (function() {
   }
 
 
-  var waitingOnAnswer;
+  var onChatSession = null;
+
+  function activateChatPannel(aSession, aPeer) {
+    debug('activateChatPannel <= ' + onChatSession);
+    if (!onChatSession) {
+      debug('activateChatPannel: No chat session active!');
+      return null;
+    }
+
+    // Enable the chat div and disable the other temporarily...
+    var otWrapper = switchVideo(true);
+    // and then...
+    if (otWrapper) {
+        document.getElementById('oncall-partner-nick-header').textContent =
+          'Conversing with ' + aPeer;
+      var pubElement = Utils.createElementAt(otWrapper, 'li', {id: 'ot-publisher'});
+      document.
+        getElementById('oncall-end-button').
+        addEventListener('click',evt => {
+          // I have to call deactivateChat instead of endCall because when I disconnect the
+          // destroyed event is not sent
+          deactivateChatPannel(aSession);
+      });
+      OTHelper.publishStreams(aSession, pubElement);
+    }
+    debug('activateChatPannel => ' + otWrapper);
+    return otWrapper;
+  }
+
+  function deactivateChatPannel(aSession) {
+    debug('deactivateChatPannel: ' + onChatSession);
+    if (!onChatSession) {
+      return;
+    }
+    // Disconnect from the session
+    switchVideo(false);
+    OTHelper.
+      endCall(aSession).
+      then(() => onChatSession = false).
+      catch(() => debug('Got an error disconnecting!'));
+  }
+
+  // Handlers for a call session
+  var _internalSessionID = 0;
+  function getOnCallHandlers(aPeer) {
+    var peopleConnected = 0;
+    var _resolveContainer;
+    var containerPromise = new Promise(resolve => _resolveContainer = resolve);
+    var myId = 'Sess: ' + _internalSessionID;
+    _internalSessionID++;
+
+    // Those are expected to be bound by the time they're set. And 'this' will be the session.
+    var onCallHandlers = {
+      connectionCreated: function(evt) {
+        peopleConnected++;
+        debug('connectionCreated(' + myId + '): ' + peopleConnected + '. D: ' + evt.connection.data);
+        if (peopleConnected >= 2) {
+          _resolveContainer(activateChatPannel(this, aPeer));
+        }
+      },
+      connectionDestroyed: function(evt) {
+        peopleConnected--;
+        debug('connectionDestroyed(' + myId + '): ' + peopleConnected + '. D: ' + evt.connection.data);
+        if (peopleConnected < 2) {
+          deactivateChatPannel(this);
+        }
+      },
+      streamCreated: function(evt) {
+        debug('streamCreated');
+        // Move this to OTHelper?
+        containerPromise.then(containerElement => {
+          var subElement = Utils.createElementAt(containerElement, 'li', {id: 'ot-subscriber'});
+          var subscriber = this.subscribe(evt.stream, subElement);
+        });
+      }
+    };
+    return onCallHandlers;
+  };
 
   /* Buttons that can be added to each friend row. Each element must have
    *  shoulAdd (friend) => boolean (true if the button must be added for that friend)
@@ -91,22 +169,26 @@ var TokesApp = (function() {
       negative: false,
       getHandler: friend => {
         var handler = function() {
+          var peerNick = arguments[2];
           debug('Somebody clicked! Sending Call to ' + arguments[1] + '' +
                 ' on ' +  arguments[0]);
           // TO-DO: UI UI UI Besides sending the call we should show something here!
           OTHelper.
             sendCallTo(arguments[0], selfNick, arguments[1]).
-            then(remoteSession => waitingOnAnswer = remoteSession).
+            then(remoteSession => {
+              onChatSession = true;
+              return remoteSession;
+            }).
             then(Server.getCallToken).
-            then(aTokenInfo => OTHelper.acceptCall(aTokenInfo, selfNick)).
-            then(session => {
-              // Enable the chat div and disable the other temporarily...
-              switchVideo();
-              // and then...
-              OTHelper.publishStreams(session, videoWrapper);
+            then(aTokenInfo => OTHelper.acceptCall(aTokenInfo, selfNick,
+                                                   getOnCallHandlers(peerNick))).
+            then(() => {
+              debug('acceptCall succeeded');
+              // TO-DO: Activate some hangup button!
             }).
             catch(error => debug('Error calling: ' + error.message));
-        }.bind(undefined, connectedFriends[friend.remoteSessionId], friend.remoteSessionId);
+        }.bind(undefined, connectedFriends[friend.remoteSessionId], friend.remoteSessionId,
+               friend.nick);
         return handler;
       }
     },
@@ -255,13 +337,12 @@ var TokesApp = (function() {
       return;
     }
     // TO-DO Show the ui, for now just accept it magically
-    Server.getCallToken(data.sessionId).
-      then(aTokenInfo => OTHelper.acceptCall(aTokenInfo, data.nick)).
+    onChatSession = true;
+    Server.
+      getCallToken(data.sessionId).
+      then(aTokenInfo => OTHelper.acceptCall(aTokenInfo, data.nick, getOnCallHandlers(data.peer))).
       then(session => {
-              // Enable the chat div and disable the other temporarily...
-              switchVideo();
-              // and then...
-              OTHelper.publishStreams(session, videoWrapper);
+        debug('Receiver: acceptCall succeeded');
       });
   }
 
@@ -301,6 +382,8 @@ var TokesApp = (function() {
       evt.preventDefault();
     }
     debug('onLoginClick called');
+
+
     if (selfNickField.value !== selfNick) {
       selfNick = selfNickField.value;
       TBUserDb.selfNick = selfNick;
@@ -309,8 +392,21 @@ var TokesApp = (function() {
       Server.friendServer = serverField.value;
       TBUserDb.friendServer = serverField.value;
     }
-    selfNickWrapper.style.display = 'none';
-    mainWrapper.style.display = '';
+
+    selfNickWrapper = document.getElementById('self-nick-wrapper');
+    var root = selfNickWrapper.parentElement;
+    root.removeChild(selfNickWrapper);
+    root.appendChild(mainWrapper);
+
+    addFriendButton = document.getElementById('add-friend-button');
+    friendList = new FriendListView(document.getElementById('friends-container'));
+    friendNickField = document.getElementById('friend-to-add');
+    // Event Listeners
+    document.getElementById('add-friend-form').
+      addEventListener('submit', onAddFriendClick);
+    friendNickField.addEventListener('input', onFriendNickChange);
+
+
     document.getElementById('header-text').textContent =
       'Hello ' + selfNick;
 
@@ -377,19 +473,28 @@ var TokesApp = (function() {
     addFriendButton.disabled = friendNickField.value === '';
   }
 
-  function switchVideo() {
-    // TO-DO I'm pretty sure there's a better way to do this!!!
-    if (videoWrapper.style.display == '') {
-      mainWrapper.style.display = '';
-      videoWrapper.style.display = 'none';
-    } else {
-      mainWrapper.style.display = 'none';
-      videoWrapper.style.display = '';
+  // Fun thing. Apparently disconnect obliterates the DOM element that hosted the publishers...
+  function switchVideo(aActivate) {
+    // Only activate if it's not active already
+    var videoElement = document.getElementById('video-wrapper');
+
+    if (( aActivate &&  videoElement)||
+        (!aActivate && !videoElement)) {
+      return null;
     }
+
+    if (aActivate) {
+      friendListWrapper.style.display = 'none';
+      mainWrapper.appendChild(videoWrapper.cloneNode(true));
+    } else {
+      friendListWrapper.style.display = '';
+      mainWrapper.removeChild(videoElement);
+    }
+    return document.getElementById('opentok-wrapper');
   }
 
   function init() {
-    var logger = new Utils.Logger('TokesServer', debugTokes);
+    var logger = new Utils.Logger('TokesApp', debugTokes);
     debug = logger.log.bind(logger);
     Server = TokesServer;
 
@@ -398,21 +503,15 @@ var TokesApp = (function() {
     selfNickField = document.getElementById('self-nick');
     loginButton = document.getElementById('login-button');
     serverField = document.getElementById('server');
-    addFriendButton = document.getElementById('add-friend-button');
     mainWrapper = document.getElementById('main-window');
+    friendListWrapper = document.getElementById('friend-list-wrapper');
     videoWrapper = document.getElementById('video-wrapper');
-    friendList = new FriendListView(document.getElementById('friends-container'));
 
     // I'm pretty sure there's a better way to do this!!!
-    mainWrapper.style.display = 'none';
-    videoWrapper.style.display = 'none';
+    mainWrapper.removeChild(videoWrapper);
+    mainWrapper.parentElement.removeChild(mainWrapper);
 
-    selfNickWrapper = document.getElementById('self-nick-wrapper');
-    friendNickField = document.getElementById('friend-to-add');
 
-    // Event Listeners
-    document.getElementById('add-friend-form').
-      addEventListener('submit', onAddFriendClick);
 
     loginButton.disabled = true;
     Server.getPresenceSession().then(aConfig => {
@@ -423,7 +522,6 @@ var TokesApp = (function() {
       presenceSessionConfig = aConfig;
     });
 
-    friendNickField.addEventListener('input', onFriendNickChange);
 
   }
 
