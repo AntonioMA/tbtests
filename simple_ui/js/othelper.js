@@ -14,6 +14,7 @@ var OTHelper = (function() {
 
         // apiKey, sessionId, token
   function acceptCall(aTokenInfo, aNick) {
+    debug('acceptCall(' + aNick + '): ' + JSON.stringify(aTokenInfo));
     return otLoaded.
       then(() => {
         return new Promise((resolve, reject) => {
@@ -75,6 +76,7 @@ var OTHelper = (function() {
   }
 
   function initPublisher(aComponent) {
+    debug('initPublisher');
     return new Promise((resolve, reject) => {
       var publisher = OT.initPublisher(aComponent, (error) =>
         (error && reject(error)) || resolve(publisher)
@@ -83,6 +85,7 @@ var OTHelper = (function() {
   }
 
   function addPublisherToSession(session, publisher) {
+    debug('addPublisherToSession: ' + aSession);
     return new Promise((resolve, reject) => {
       session.publish(publisher, (error) =>
         (error && reject(error)) || resolve(session));
@@ -90,7 +93,8 @@ var OTHelper = (function() {
   }
 
   function publishStreams(aSession, aComponent) {
-    initPublisher.then(publisher => addPublisherToSession(aSession, publisher));
+    debug('publishStreams: ' + aSession);
+    initPublisher(aComponent).then(publisher => addPublisherToSession(aSession, publisher));
   }
 
   // Inform the peer (over the presence channel) of changes on what we
@@ -122,7 +126,8 @@ var OTHelper = (function() {
     connectToPresenceSession: connectToPresenceSession,
     sendCallTo: sendCallTo,
     updatePeer: updatePeer,
-    publishStream: publishStreams
+    publishStreams: publishStreams,
+    acceptCall: acceptCall
   };
 
 })();

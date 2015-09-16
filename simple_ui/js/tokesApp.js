@@ -105,7 +105,7 @@ var TokesApp = (function() {
               // and then...
               OTHelper.publishStreams(session, videoWrapper);
             }).
-            catch(error => debug('Error calling: ' + JSON.stringify(error)));
+            catch(error => debug('Error calling: ' + error.message));
         }.bind(undefined, connectedFriends[friend.remoteSessionId], friend.remoteSessionId);
         return handler;
       }

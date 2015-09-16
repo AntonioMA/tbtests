@@ -63,6 +63,7 @@ var TokesServer = (function() {
   }
 
   function getCallToken(aSession) {
+    debug("getCallToken: " + aSession);
     return Utils.
       sendXHR('GET', '/chats?sessionId=' + encodeURIComponent(aSession));
   }
