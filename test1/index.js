@@ -10,12 +10,13 @@ var parseSearch = function(aSearchStr) {
     return currValue;
   }
 
-  aSearchStr = window.decodeURIComponent(aSearchStr);
   return aSearchStr.slice(1).split('&').
     map(function(aParam) { return aParam.split('='); }).
     reduce(function(aObject, aCurrentValue) {
       var parName = aCurrentValue[0];
-      aObject.params[parName] = _addValue(aObject.params[parName], aCurrentValue[1] || null);
+      var value = aCurrentValue[1] && window.decodeURIComponent(aCurrentValue[1]) || null;
+
+      aObject.params[parName] = _addValue(aObject.params[parName], value);
       return aObject;
     },
            {
