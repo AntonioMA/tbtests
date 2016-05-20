@@ -1,0 +1,27 @@
+<body>
+<script src="https://static.opentok.com/v2/js/opentok.js" charset="utf-8"></script>
+<script charset="utf-8">
+var apiKey = '45592332';
+var sessionId = '2_MX40NTU5MjMzMn5-MTQ2MzcwOTQ3ODY0OX55ODNubHZaWWUrb3JGUitQVXIvU3pwNEV-fg';
+var token = 'T1==cGFydG5lcl9pZD00NTU5MjMzMiZzaWc9MjhjYTk5NmJjMGMzY2UyM2IzYmNkODEyZDdkNzMwYzhiYzExNDQ4MTpzZXNzaW9uX2lkPTJfTVg0ME5UVTVNak16TW41LU1UUTJNemN3T1RRM09EWTBPWDU1T0ROdWJIWmFXV1VyYjNKR1VpdFFWWEl2VTNwd05FVi1mZyZjcmVhdGVfdGltZT0xNDYzNzA5NDk4Jm5vbmNlPTAuMjUzNzk2NDM0NDk1NTk4MSZyb2xlPXB1Ymxpc2hlciZleHBpcmVfdGltZT0xNDYzNzk1ODk5';
+var session = OT.initSession(apiKey, sessionId)
+.on('streamCreated', function(event) {
+session.subscribe(event.stream);
+})
+.connect(token, function(error) {
+var publisher = OT.initPublisher();
+session.publish(moderator);
+});
+
+function resizePublisher() {
+publisher.element.style.width = "1000px";
+publisher.element.style.height = "750px";
+}
+</script>
+
+<div id="container">
+<div id="myPublisher"></div>
+<a href="javascript:resizePublisher()">resize</a>
+</div>
+
+</body>
