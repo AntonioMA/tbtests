@@ -10,7 +10,7 @@ session.subscribe(event.stream);
 })
 .connect(token, function(error) {
 var publisher = OT.initPublisher();
-session.publish(moderator);
+session.publish(publisher);
 });
 
 function resizePublisher() {
