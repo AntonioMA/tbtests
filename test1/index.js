@@ -46,7 +46,12 @@ function startOTTest(params) {
   },
   "connectionDestroyed": function(evt) {
     console.log("Got a connection destroyed event. Data: [" + evt.connection.data + "]");
-  }
+  },
+  "streamCreated": function (event) {
+   console.log("New stream in the session: " + event.stream.streamId);
+
+   session.subscribe(event.stream);
+ 	}
   });
   session.connect(params.token);
 }
