@@ -20,7 +20,7 @@
     "url": "https://github.com/AntonioMA/tbtests/issues"
   },
   "homepage": "https://github.com/AntonioMA/tbtests/",
-  "devDependencies": {
+  "dependencies": {
     "express": "^4.0.0",
     "ioredis": "~1.7.0",
     "opentok": "~v2.3.0"
