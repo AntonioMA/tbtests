@@ -6,10 +6,11 @@
     document.head.appendChild(otSrc);
   };
 
-  exports.OTLoadConfig = aName => {
+  exports.OTLoadConfig = (aName, aServer) => {
+    aServer = aServer || document.location.origin;
     return new Promise((resolve, reject) => {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', '/session/' + aName);
+      xhr.open('GET', aServer + '/session/' + aName);
       xhr.responseType = 'json';
       xhr.onload = function(aEvt) {
         if (xhr.status === 200) {
