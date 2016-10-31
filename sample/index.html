@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html manifest="manifest.appcache">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="pragma" content="no-cache">
+    <title>Very simple OT Sample</title>
+    <script type="text/javascript" src="https://static.opentok.com/webrtc/v2/js/opentok.min.js"></script>
+    <script type="text/javascript" src="index.js"> </script>
+    <script>
+      function connect() {
+        var room = document.location.search && document.location.search.substr(1) || 'sampleMF';
+        var pubContainer = document.querySelector('#myPublisher');
+        var subContainer = document.querySelector('#subscribers');
+        OTStart(room, pubContainer, subContainer);
+      }
+    </script>
+  </head>
+  <body role="application">
+    <div id="subscribers">
+      <h2> Subscribers </h2>
+    </div>
+    <div id="myPublisher">
+      <h2> Publisher </h2>
+    </div>
+    <a href="javascript:connect()">Connect</a>
+    <a href="javascript:OTResizePublisher()">Resize</a>
+  </body>
+</html>
