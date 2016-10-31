@@ -41,17 +41,16 @@ function onload() {
 function startOTTest(params) {
   var session = OT.initSession(params.apiKey, params.sessionId);
   session.on({
-  "connectionCreated": function(evt) {
-    console.log("Got a connection created event. Data: [" + evt.connection.data + "]");
-  },
-  "connectionDestroyed": function(evt) {
-    console.log("Got a connection destroyed event. Data: [" + evt.connection.data + "]");
-  },
-  "streamCreated": function (event) {
-   console.log("New stream in the session: " + event.stream.streamId);
-
-   session.subscribe(event.stream);
- 	}
+    "connectionCreated": function(evt) {
+      console.log("Got a connection created event. Data: [" + evt.connection.data + "]");
+    },
+    "connectionDestroyed": function(evt) {
+      console.log("Got a connection destroyed event. Data: [" + evt.connection.data + "]");
+    },
+    "streamCreated": function (event) {
+      console.log("New stream in the session: " + event.stream.streamId);
+      session.subscribe(event.stream);
+    }
   });
   session.connect(params.token);
 }
