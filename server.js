@@ -86,7 +86,7 @@ redis.pipeline().get(TB_API_KEY).get(TB_API_SECRET).exec().then(results => {
   console.log('ARGS: ', JSON.stringify(process.argv));
   var httpServer = require('http');
 
-  httpServer.createServer(app).listen(process.argv[2] || DEFAULT_SERVER_PORT);
+  httpServer.createServer(app).listen(process.env.PORT || process.argv[2] || DEFAULT_SERVER_PORT);
 }).catch(e => {
   console.error('Error configuring or launching the server:', e);
 });
