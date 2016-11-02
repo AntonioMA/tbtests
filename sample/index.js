@@ -1,16 +1,18 @@
 !function(exports) {
 
+  var OTScriptOrigin = new URL(document.currentScript.src).origin;
+  console.log('Using:', OTScriptOrigin, 'as baseURL.');
+
   exports.OTLoadSDK = () => {
     var otSrc = document.createElement('script');
     otSrc.src = 'https://static.opentok.com/webrtc/v2/js/opentok.min.js';
     document.head.appendChild(otSrc);
   };
 
-  exports.OTLoadConfig = (aName, aServer) => {
-    aServer = aServer || document.location.origin;
+  exports.OTLoadConfig = (aName) => {
     return new Promise((resolve, reject) => {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', aServer + '/session/' + aName);
+      xhr.open('GET', [OTScriptOrigin, 'session', aName].join('/'));
       xhr.responseType = 'json';
       xhr.onload = function(aEvt) {
         if (xhr.status === 200) {
@@ -29,10 +31,10 @@
       var session = OT.
         initSession(sessInfo.apiKey, sessInfo.sessionId).
         on('streamCreated', function(event) {
-          session.subscribe(event.stream, aSubContainer, {insertMode: 'append'});
+          session.subscribe(event.stream, aSubContainer, { insertMode: 'append' });
         }).
         connect(sessInfo.token, function(error) {
-          publisher = OT.initPublisher(aPubContainer, {insertMode: 'append'});
+          publisher = OT.initPublisher(aPubContainer, { insertMode: 'append' });
           session.publish(publisher);
         });
     });
