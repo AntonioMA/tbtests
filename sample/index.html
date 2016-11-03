@@ -11,7 +11,8 @@
         var room = document.location.search && document.location.search.substr(1) || 'sampleMF';
         var pubContainer = document.querySelector('#myPublisher');
         var subContainer = document.querySelector('#subscribers');
-        OTStart(room, pubContainer, subContainer);
+        var msgContainer = document.querySelector('#msgList');
+        OTStart(room, pubContainer, subContainer, msgContainer);
       }
     </script>
   </head>
@@ -21,6 +22,10 @@
     </div>
     <div id="myPublisher">
       <h2> Publisher </h2>
+    </div>
+    <div id="messages">
+      <ul id="msgList">
+      </ul>
     </div>
     <a href="javascript:connect()">Connect</a>
     <a href="javascript:OTResizePublisher()">Resize</a>

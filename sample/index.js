@@ -26,12 +26,19 @@
   };
 
   var publisher;
-  exports.OTStart = (aName, aPubContainer, aSubContainer) =>
+  exports.OTStart = (aName, aPubContainer, aSubContainer, aMsgContainer) =>
     exports.OTLoadConfig(aName).then(sessInfo => {
       var session = OT.
         initSession(sessInfo.apiKey, sessInfo.sessionId).
         on('streamCreated', function(event) {
           session.subscribe(event.stream, aSubContainer, { insertMode: 'append' });
+        }).
+        on('signal', evt => {
+          var li = document.createElement('li');
+          li.textContent = 'Signal Received. Type: ' + evt.type + ', Data: ' + evt.data +
+            ' . From: ' + evt.from.connectionId;
+          console.log('E:', evt);
+          aMsgContainer.appendChild(li);
         }).
         connect(sessInfo.token, function(error) {
           publisher = OT.initPublisher(aPubContainer, { insertMode: 'append' });
