@@ -4,6 +4,18 @@
   var OTScriptOrigin = new URL(document.currentScript.src).origin;
   console.log('Using:', OTScriptOrigin, 'as baseURL.');
 
+  var _getUserMedia = navigator.getUserMedia.bind(navigator);
+
+  var _patchedGUM = function(constraints, sCB, eCB) {
+    console.log('PatchedGUM:', arguments);
+    _getUserMedia(constraints, sCB, eCB);
+  };
+
+
+  exports.PatchGUM = () => {
+    navigator.getUserMedia = navigator.webkitGetUserMedia = _getUserMedia;
+  };
+
   exports.OTLoadSDK = () => {
     var otSrc = document.createElement('script');
     otSrc.src = 'https://static.opentok.com/webrtc/v2/js/opentok.min.js';
