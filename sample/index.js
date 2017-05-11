@@ -13,7 +13,7 @@
 
 
   exports.PatchGUM = () => {
-    navigator.getUserMedia = navigator.webkitGetUserMedia = _getUserMedia;
+    navigator.getUserMedia = navigator.webkitGetUserMedia = _patchedGUM;
   };
 
   exports.OTLoadSDK = () => {
