@@ -23,6 +23,7 @@
   "dependencies": {
     "express": "^4.0.0",
     "ioredis": "~1.7.0",
+    "jshint": "^2.9.4",
     "opentok": "~v2.3.0"
   }
 }

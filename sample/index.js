@@ -1,4 +1,5 @@
 !function(exports) {
+  'use strict';
 
   var OTScriptOrigin = new URL(document.currentScript.src).origin;
   console.log('Using:', OTScriptOrigin, 'as baseURL.');
